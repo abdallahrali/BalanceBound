@@ -1,5 +1,5 @@
 """
-UI layer for the Arabic Accounting System.
+UI layer for the Accounting System.
 Each submodule corresponds to a single page and exposes a `render()` function.
 """
 

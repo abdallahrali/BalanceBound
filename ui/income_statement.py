@@ -16,8 +16,8 @@ def render():
     st.markdown(
         """
     <div class='main-header'>
-      <h1>💹 قائمة الدخل</h1>
-      <p>Income Statement — نتائج الأعمال للفترة</p>
+      <h1>💹 Income Statement</h1>
+      <p>Company performance results for the period</p>
     </div>
     """,
         unsafe_allow_html=True,
@@ -32,32 +32,34 @@ def render():
     net = data["net_income"]
 
     # Revenue section
-    st.markdown("### 💰 الإيرادات")
+    st.markdown("### 💰 Revenues")
     if not rev_df.empty:
-        rev_show = rev_df[["الكود", "اسم الحساب", "الرصيد"]].copy()
-        rev_show["الرصيد"] = rev_show["الرصيد"].apply(format_currency)
+        # Using English column names from logic/reports.py
+        rev_show = rev_df[["Code", "Account Name", "Balance"]].copy()
+        rev_show["Balance"] = rev_show["Balance"].apply(format_currency)
         st.dataframe(rev_show, use_container_width=True, hide_index=True)
-    st.markdown(f"**إجمالي الإيرادات: {format_currency(total_rev)}**")
+    st.markdown(f"**Total Revenues: {format_currency(total_rev)}**")
 
     st.markdown("---")
 
     # Expense section
-    st.markdown("### 📉 المصروفات")
+    st.markdown("### 📉 Expenses")
     if not exp_df.empty:
-        exp_show = exp_df[["الكود", "اسم الحساب", "الرصيد"]].copy()
-        exp_show["الرصيد"] = exp_show["الرصيد"].apply(format_currency)
+        # Using English column names from logic/reports.py
+        exp_show = exp_df[["Code", "Account Name", "Balance"]].copy()
+        exp_show["Balance"] = exp_show["Balance"].apply(format_currency)
         st.dataframe(exp_show, use_container_width=True, hide_index=True)
-    st.markdown(f"**إجمالي المصروفات: {format_currency(total_exp)}**")
+    st.markdown(f"**Total Expenses: {format_currency(total_exp)}**")
 
     st.markdown("---")
 
-    # Net result banner
+    # Net Profit/Loss display
     if net >= 0:
         st.markdown(
             f"""
-        <div style='background: linear-gradient(135deg,#155724,#28a745);
+        <div style='background: linear-gradient(135deg, #1e7e34, #28a745); 
                     color:white; padding:20px; border-radius:12px; text-align:center;'>
-          <div style='font-size:16px;'>✅ صافي الربح للفترة</div>
+          <div style='font-size:16px;'>✅ Net Profit for the Period</div>
           <div style='font-size:36px; font-weight:700;'>{format_currency(net)}</div>
         </div>
         """,
@@ -66,9 +68,9 @@ def render():
     else:
         st.markdown(
             f"""
-        <div style='background: linear-gradient(135deg,#721c24,#dc3545);
+        <div style='background: linear-gradient(135deg, #721c24, #dc3545); 
                     color:white; padding:20px; border-radius:12px; text-align:center;'>
-          <div style='font-size:16px;'>❌ صافي الخسارة للفترة</div>
+          <div style='font-size:16px;'>❌ Net Loss for the Period</div>
           <div style='font-size:36px; font-weight:700;'>{format_currency(abs(net))}</div>
         </div>
         """,
@@ -80,10 +82,10 @@ def render():
     # Waterfall chart
     fig = go.Figure(
         go.Waterfall(
-            name="قائمة الدخل",
+            name="Income Statement",
             orientation="v",
             measure=["relative", "relative", "total"],
-            x=["الإيرادات", "المصروفات", "صافي الربح"],
+            x=["Revenues", "Expenses", "Net Profit"],
             y=[total_rev, -total_exp, 0],
             connector={"line": {"color": "rgb(63, 63, 63)"}},
             increasing={"marker": {"color": "#28a745"}},
@@ -93,11 +95,12 @@ def render():
             textposition="outside",
         )
     )
+
     fig.update_layout(
-        title="",
-        height=350,
-        font=dict(family="Cairo"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
+        title="Income Statement Breakdown",
+        showlegend=False,
+        height=400,
+        font=dict(family="Inter"),
+        margin=dict(l=20, r=20, t=50, b=20),
     )
     st.plotly_chart(fig, use_container_width=True)

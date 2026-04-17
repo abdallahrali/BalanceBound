@@ -17,8 +17,8 @@ def render():
     st.markdown(
         """
     <div class='main-header'>
-      <h1>🏛️ الميزانية العمومية</h1>
-      <p>Balance Sheet — المركز المالي للشركة</p>
+      <h1>🏛️ Balance Sheet</h1>
+      <p>Statement of the company's financial position</p>
     </div>
     """,
         unsafe_allow_html=True,
@@ -35,38 +35,39 @@ def render():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("### 🏦 الأصول")
+        st.markdown("### 🏦 Assets")
         if not assets_df.empty:
-            a_show = assets_df[["الكود", "اسم الحساب"]].copy()
-            a_show["الرصيد"] = (
-                assets_df["ميزان المجاميع - مدين"] - assets_df["ميزان المجاميع - دائن"]
+            a_show = assets_df[["Code", "Account Name"]].copy()
+            # Calculating net balance for assets (Debit - Credit)
+            a_show["Balance"] = (
+                assets_df["Total - Debit"] - assets_df["Total - Credit"]
             ).apply(format_currency)
             st.dataframe(a_show, use_container_width=True, hide_index=True)
         st.markdown(
             f"""
-        <div style='background:#0f3460; color:white; padding:12px 16px;
+        <div style='background:#0f3460; color:white; padding:12px 16px; 
                     border-radius:8px; font-weight:700; font-size:16px;'>
-          إجمالي الأصول: {format_currency(total_assets)}
+          Total Assets: {format_currency(total_assets)}
         </div>""",
             unsafe_allow_html=True,
         )
 
     with col2:
-        st.markdown("### ⚖️ الإلتزامات وحقوق الملكية")
+        st.markdown("### ⚖️ Liabilities & Equity")
         if not liab_df.empty:
-            l_show = liab_df[["الكود", "اسم الحساب"]].copy()
-            l_show["الرصيد"] = (
-                liab_df["ميزان المجاميع - دائن"] - liab_df["ميزان المجاميع - مدين"]
+            l_show = liab_df[["Code", "Account Name"]].copy()
+            # Calculating net balance for liabilities/equity (Credit - Debit)
+            l_show["Balance"] = (
+                liab_df["Total - Credit"] - liab_df["Total - Debit"]
             ).apply(format_currency)
             st.dataframe(l_show, use_container_width=True, hide_index=True)
-        st.markdown(
-            f"**صافي الربح المضاف لحقوق الملكية:** {format_currency(net_income)}"
-        )
+
+        st.markdown(f"**Net Profit added to Equity:** {format_currency(net_income)}")
         st.markdown(
             f"""
-        <div style='background:#155724; color:white; padding:12px 16px;
+        <div style='background:#155724; color:white; padding:12px 16px; 
                     border-radius:8px; font-weight:700; font-size:16px;'>
-          إجمالي الإلتزامات وحقوق الملكية: {format_currency(total_liab)}
+          Total Liabilities & Equity: {format_currency(total_liab)}
         </div>""",
             unsafe_allow_html=True,
         )
@@ -75,11 +76,11 @@ def render():
 
     diff = total_assets - total_liab
     if abs(diff) < 1:
-        st.success("✅ الميزانية العمومية متوازنة")
+        st.success("✅ The balance sheet is balanced")
     else:
         st.warning(
-            f"⚠️ فرق في الميزانية: {format_currency(abs(diff))} — "
-            "قد يكون بسبب أرصدة حقوق الملكية الافتراضية"
+            f"⚠️ Balance Sheet Difference: {format_currency(abs(diff))} — "
+            "This may be due to default opening equity balances"
         )
 
     # Asset breakdown donut chart
@@ -91,13 +92,14 @@ def render():
                 values=[max(v, 0) for v in values],
                 hole=0.5,
                 marker=dict(
-                    colors=["#0f3460", "#e94560", "#533483", "#28a745", "#ffc107"]
+                    colors=["#0f3460", "#e94560", "#222831", "#393e46", "#eeeeee"]
                 ),
             )
         )
         fig.update_layout(
-            title="توزيع الأصول",
+            title="Asset Distribution",
             height=350,
-            font=dict(family="Cairo"),
+            font=dict(family="Inter"),
+            margin=dict(l=20, r=20, t=50, b=20),
         )
         st.plotly_chart(fig, use_container_width=True)

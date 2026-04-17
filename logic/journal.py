@@ -14,6 +14,7 @@ from logic.accounts import get_account_type, get_accounts_dict
 
 def _load_opening_balances() -> dict:
     """Load opening balances from CSV."""
+    # Assuming CSV headers are: code, dr, cr
     df = pd.read_csv(OPENING_BALANCES_CSV, dtype={"code": str})
     result = {}
     for _, row in df.iterrows():
@@ -67,6 +68,7 @@ def validate_je_lines() -> tuple[float, float, float, bool]:
     total_dr = sum(l["dr"] for l in st.session_state.je_lines)
     total_cr = sum(l["cr"] for l in st.session_state.je_lines)
     diff = abs(total_dr - total_cr)
+    # Balanced if difference is negligible and there is at least one debit
     is_balanced = diff < 0.01 and total_dr > 0
     return total_dr, total_cr, diff, is_balanced
 

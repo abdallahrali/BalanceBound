@@ -18,8 +18,8 @@ def render_sidebar() -> str:
         f"""
     <div style='text-align:center; padding: 15px 0;'>
       <div style='font-size:40px;'>📊</div>
-      <div style='font-size:18px; font-weight:700; color:#0f3460;'>نظام المحاسبة</div>
-      <div style='font-size:11px; color:#888;'>Accounting System v{APP_VERSION}</div>
+      <div style='font-size:18px; font-weight:700; color:#0f3460;'>Accounting System</div>
+      <div style='font-size:11px; color:#888;'>v{APP_VERSION}</div>
     </div>
     """,
         unsafe_allow_html=True,
@@ -27,6 +27,7 @@ def render_sidebar() -> str:
 
     st.sidebar.markdown("---")
 
+    # The radio button uses the keys from PAGES defined in config.py
     selected_label = st.sidebar.radio(
         "", list(PAGES.keys()), label_visibility="collapsed"
     )
@@ -39,8 +40,8 @@ def render_sidebar() -> str:
     st.sidebar.markdown(
         f"""
     <div style='text-align:center; font-size:12px; color:#888;'>
-      إجمالي القيود: <b>{total}</b><br>
-      آخر تحديث: {now}
+      Total Entries: <b>{total}</b><br>
+      Last Update: {now}
     </div>
     """,
         unsafe_allow_html=True,

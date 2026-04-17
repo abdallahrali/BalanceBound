@@ -1,6 +1,5 @@
 """
-Arabic Accounting System — Main Streamlit Entry Point
-نظام المحاسبة — نقطة الدخول الرئيسية
+Accounting System — Main Streamlit Entry Point
 """
 
 import streamlit as st
@@ -59,4 +58,4 @@ elif page == "balance_sheet":
     render()
 
 else:
-    st.error(f"الصفحة غير موجودة: {page}")
+    st.error(f"Page not found: {page}")

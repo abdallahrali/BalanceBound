@@ -1,12 +1,14 @@
 """
-Logic layer for the Arabic Accounting System.
+Logic layer for the Accounting System.
 Exposes core business logic: account lookups, journal operations, and reporting.
 """
 
 from logic.accounts import (
+    get_account_type_label,  # Renamed from get_account_type_arabic
+)
+from logic.accounts import (
     build_accounts_display_df,
     get_account_type,
-    get_account_type_arabic,
     get_accounts_dict,
     get_code_level_label,
     get_leaf_accounts,
@@ -36,7 +38,7 @@ __all__ = [
     "get_accounts_dict",
     "get_leaf_accounts",
     "get_account_type",
-    "get_account_type_arabic",
+    "get_account_type_label",  # Renamed from get_account_type_arabic
     "get_code_level_label",
     "build_accounts_display_df",
     # journal
@@ -49,8 +51,8 @@ __all__ = [
     "delete_journal_entry",
     "get_all_entries",
     # reports
-    "format_currency",
     "compute_trial_balance",
+    "format_currency",
     "get_income_statement_data",
     "get_balance_sheet_data",
     "get_asset_breakdown",

@@ -5,7 +5,7 @@ Account chart loading and lookup utilities.
 import pandas as pd
 
 from config import (
-    ACCOUNT_TYPE_ARABIC,
+    ACCOUNT_TYPE_LABELS,
     ACCOUNT_TYPE_MAP,
     ACCOUNTS_CSV,
     CODE_LEVEL_LABELS,
@@ -41,21 +41,22 @@ def get_account_type(code: str) -> str:
     return "Other"
 
 
-def get_account_type_arabic(code: str) -> str:
-    """Return the Arabic label for an account's type."""
+def get_account_type_label(code: str) -> str:
+    """Return the English label for an account's type."""
     eng = get_account_type(code)
-    return ACCOUNT_TYPE_ARABIC.get(eng, "أخرى")
+    return ACCOUNT_TYPE_LABELS.get(eng, "Other")
 
 
 def get_code_level_label(code: str) -> str:
-    """Return Arabic level label based on code length."""
+    """Return level label based on code length."""
     return CODE_LEVEL_LABELS.get(len(str(code)), "")
 
 
 def build_accounts_display_df() -> pd.DataFrame:
     """Build a display-ready DataFrame with type and level columns."""
     df = load_accounts_df()
-    df.rename(columns={"code": "الكود", "name": "اسم الحساب"}, inplace=True)
-    df["النوع"] = df["الكود"].apply(get_account_type_arabic)
-    df["المستوى"] = df["الكود"].apply(get_code_level_label)
+    # Renaming columns to English for the UI
+    df.rename(columns={"code": "Code", "name": "Account Name"}, inplace=True)
+    df["Type"] = df["Code"].apply(get_account_type_label)
+    df["Level"] = df["Code"].apply(get_code_level_label)
     return df

@@ -1,5 +1,5 @@
 """
-CSS styling and RTL support.
+CSS styling and LTR support.
 """
 
 import streamlit as st
@@ -10,13 +10,14 @@ def inject_css():
     st.markdown(
         """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    * { font-family: 'Cairo', sans-serif !important; }
+    * { font-family: 'Inter', sans-serif !important; }
 
-    .stApp { direction: rtl; }
-    .stSidebar { direction: rtl; }
-    [data-testid="stSidebar"] { direction: rtl; }
+    /* Layout Direction: Left-to-Right */
+    .stApp { direction: ltr; }
+    .stSidebar { direction: ltr; }
+    [data-testid="stSidebar"] { direction: ltr; }
 
     .metric-card {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -33,14 +34,14 @@ def inject_css():
     .main-header {
         background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
         padding: 25px 30px;
-        border-radius: 15px;
+        border-radius: 12px;
         margin-bottom: 25px;
         border-left: 5px solid #e94560;
     }
     .main-header h1 { color: white; margin: 0; font-size: 26px; }
     .main-header p { color: #a0a0b0; margin: 5px 0 0 0; font-size: 14px; }
 
-    .stDataFrame { direction: rtl; }
+    .stDataFrame { direction: ltr; }
     thead th { background-color: #0f3460 !important; color: white !important; }
 
     .stButton > button {
@@ -69,21 +70,29 @@ def inject_css():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 10px;
-        direction: rtl;
+        direction: ltr;
     }
     .journal-card .je-header {
-        font-weight: 700; color: #0f3460; font-size: 15px; margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #0f3460;
     }
-    .journal-card .je-row {
-        display: flex; justify-content: space-between;
-        padding: 4px 0; border-bottom: 1px solid #eee;
+    .journal-card .je-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        padding: 2px 0;
     }
-    .dr-amount { color: #28a745; font-weight: 600; }
-    .cr-amount { color: #dc3545; font-weight: 600; }
-
-    .stTextInput input, .stNumberInput input, .stSelectbox select {
-        direction: rtl;
-        text-align: right;
+    .je-line .dr { color: #2ecc71; font-weight: 600; }
+    .je-line .cr { color: #e74c3c; font-weight: 600; }
+    
+    /* Responsive adjustment for metric labels */
+    [data-testid="stMetricLabel"] {
+        text-align: left;
     }
     </style>
     """,

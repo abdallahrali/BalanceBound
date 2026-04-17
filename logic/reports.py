@@ -48,17 +48,17 @@ def compute_trial_balance() -> pd.DataFrame:
         bal = tb_dr - tb_cr
         rows.append(
             {
-                "الكود": code,
-                "اسم الحساب": accounts.get(code, code),
-                "رصيد أول المدة - مدين": b["ob_dr"],
-                "رصيد أول المدة - دائن": b["ob_cr"],
-                "الحركة - مدين": b["mv_dr"],
-                "الحركة - دائن": b["mv_cr"],
-                "ميزان المجاميع - مدين": tb_dr,
-                "ميزان المجاميع - دائن": tb_cr,
-                "الرصيد": abs(bal),
-                "طبيعة الرصيد": "مدين" if bal >= 0 else "دائن",
-                "نوع الحساب": get_account_type(code),
+                "Code": code,
+                "Account Name": accounts.get(code, code),
+                "Opening Balance - Debit": b["ob_dr"],
+                "Opening Balance - Credit": b["ob_cr"],
+                "Movement - Debit": b["mv_dr"],
+                "Movement - Credit": b["mv_cr"],
+                "Total - Debit": tb_dr,
+                "Total - Credit": tb_cr,
+                "Balance": abs(bal),
+                "Balance Type": "Debit" if bal >= 0 else "Credit",
+                "Account Type": get_account_type(code),
             }
         )
     return pd.DataFrame(rows)
@@ -69,10 +69,10 @@ def get_income_statement_data(tb: pd.DataFrame) -> dict:
     Extract income statement figures from a trial balance DataFrame.
     Returns dict with revenue_df, expense_df, total_rev, total_exp, net_income.
     """
-    rev_df = tb[tb["نوع الحساب"] == "Revenue"].copy()
-    exp_df = tb[tb["نوع الحساب"] == "Expense"].copy()
-    total_rev = rev_df["الرصيد"].sum()
-    total_exp = exp_df["الرصيد"].sum()
+    rev_df = tb[tb["Account Type"] == "Revenue"].copy()
+    exp_df = tb[tb["Account Type"] == "Expense"].copy()
+    total_rev = rev_df["Balance"].sum()
+    total_exp = exp_df["Balance"].sum()
     net_income = total_rev - total_exp
     return {
         "rev_df": rev_df,
@@ -88,17 +88,15 @@ def get_balance_sheet_data(tb: pd.DataFrame) -> dict:
     Extract balance sheet figures from a trial balance DataFrame.
     Returns dict with assets_df, liab_df, net_income, total_assets, total_liab.
     """
-    assets_df = tb[tb["نوع الحساب"] == "Asset"].copy()
-    liab_df = tb[tb["نوع الحساب"] == "Liability/Equity"].copy()
-    rev_df = tb[tb["نوع الحساب"] == "Revenue"]
-    exp_df = tb[tb["نوع الحساب"] == "Expense"]
+    assets_df = tb[tb["Account Type"] == "Asset"].copy()
+    liab_df = tb[tb["Account Type"] == "Liability/Equity"].copy()
+    rev_df = tb[tb["Account Type"] == "Revenue"]
+    exp_df = tb[tb["Account Type"] == "Expense"]
 
-    net_income = rev_df["الرصيد"].sum() - exp_df["الرصيد"].sum()
-    total_assets = (
-        assets_df["ميزان المجاميع - مدين"] - assets_df["ميزان المجاميع - دائن"]
-    ).sum()
+    net_income = rev_df["Balance"].sum() - exp_df["Balance"].sum()
+    total_assets = (assets_df["Total - Debit"] - assets_df["Total - Credit"]).sum()
     total_liab = (
-        liab_df["ميزان المجاميع - دائن"] - liab_df["ميزان المجاميع - مدين"]
+        liab_df["Total - Credit"] - liab_df["Total - Debit"]
     ).sum() + net_income
 
     return {
@@ -115,15 +113,20 @@ def get_asset_breakdown(assets_df: pd.DataFrame) -> tuple[list[str], list[float]
     Break down assets into categories for charting.
     Returns (labels, values).
     """
-    codes = assets_df["الكود"].astype(str)
+    codes = assets_df["Code"].astype(str)
 
     def _net(mask):
         return (
-            assets_df.loc[mask, "ميزان المجاميع - مدين"]
-            - assets_df.loc[mask, "ميزان المجاميع - دائن"]
+            assets_df.loc[mask, "Total - Debit"] - assets_df.loc[mask, "Total - Credit"]
         ).sum()
 
-    labels = ["الأصول الثابتة", "البنوك والنقدية", "المخزون", "العملاء", "أخرى"]
+    labels = [
+        "Fixed Assets",
+        "Banks & Cash",
+        "Inventory",
+        "Accounts Receivable",
+        "Other",
+    ]
     values = [
         _net(codes.str.startswith("101")),
         _net(codes.str.startswith("102")),
