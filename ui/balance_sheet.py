@@ -92,7 +92,7 @@ def render():
                 values=[max(v, 0) for v in values],
                 hole=0.5,
                 marker=dict(
-                    colors=["#0f3460", "#e94560", "#222831", "#393e46", "#eeeeee"]
+                    colors=["#0f3460", "#e94560", "#3BC92B", "#E2ED1B", "#eeeeee"]
                 ),
             )
         )
