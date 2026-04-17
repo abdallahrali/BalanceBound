@@ -63,21 +63,22 @@ def inject_css():
     }
 
     .journal-card {
-        background: #f8f9ff;
-        border: 1px solid #dee2e6;
+        background: var(--secondary-background-color);
+        border: 1px solid rgba(150, 150, 150, 0.3);
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 10px;
         direction: ltr;
+        color: var(--text-color);
     }
     .journal-card .je-header {
         display: flex;
         justify-content: space-between;
-        border-bottom: 1px dashed #ccc;
+        border-bottom: 1px dashed rgba(150, 150, 150, 0.4);
         padding-bottom: 8px;
         margin-bottom: 10px;
         font-weight: 600;
-        color: #0f3460;
+        color: var(--text-color);
     }
     .journal-card .je-line {
         display: flex;
