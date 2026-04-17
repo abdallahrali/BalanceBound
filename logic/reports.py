@@ -9,11 +9,12 @@ from logic.accounts import get_account_type, get_accounts_dict
 
 
 def format_currency(val: float) -> str:
-    """Format a number for display; zero shows as dash."""
+    """Format a number for display; zero shows as dash, negatives in parentheses."""
     if val == 0:
         return "-"
+    elif val < 0:
+        return f"({abs(val):,.0f})"
     return f"{val:,.0f}"
-
 
 def compute_trial_balance() -> pd.DataFrame:
     """
