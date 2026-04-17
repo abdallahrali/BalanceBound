@@ -12,8 +12,6 @@ def inject_css():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    * { font-family: 'Inter', sans-serif !important; }
-
     /* Layout Direction: Left-to-Right */
     .stApp { direction: ltr; }
     .stSidebar { direction: ltr; }

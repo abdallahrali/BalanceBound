@@ -82,24 +82,3 @@ def render():
             f"⚠️ Balance Sheet Difference: {format_currency(abs(diff))} — "
             "This may be due to default opening equity balances"
         )
-
-    # Asset breakdown donut chart
-    labels, values = get_asset_breakdown(assets_df)
-    if any(v > 0 for v in values):
-        fig = go.Figure(
-            go.Pie(
-                labels=labels,
-                values=[max(v, 0) for v in values],
-                hole=0.5,
-                marker=dict(
-                    colors=["#0f3460", "#e94560", "#3BC92B", "#E2ED1B", "#eeeeee"]
-                ),
-            )
-        )
-        fig.update_layout(
-            title="Asset Distribution",
-            height=350,
-            font=dict(family="Inter"),
-            margin=dict(l=20, r=20, t=50, b=20),
-        )
-        st.plotly_chart(fig, use_container_width=True)

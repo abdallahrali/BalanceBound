@@ -29,7 +29,7 @@ def render_sidebar() -> str:
 
     # The radio button uses the keys from PAGES defined in config.py
     selected_label = st.sidebar.radio(
-        "", list(PAGES.keys()), label_visibility="collapsed"
+        "dffkgnskdjlg", list(PAGES.keys()), label_visibility="collapsed"
     )
     page = PAGES[selected_label]
 
