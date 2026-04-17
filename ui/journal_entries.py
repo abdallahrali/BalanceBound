@@ -67,12 +67,20 @@ def _render_view_tab():
                 columns={
                     "code": "Code",
                     "name": "Account Name",
+                    "account_type": "Entered Type", # The new field
+                    "numerical": "Numerical",       # The new field
                     "dr": "Debit",
                     "cr": "Credit",
-                    "type": "Account Type",
                 }
             )
-            st.table(df_display[["Code", "Account Name", "Debit", "Credit"]])
+            
+            # Select columns to display safely (checks if old entries don't have the new keys yet)
+            cols_to_show = ["Code", "Account Name"]
+            if "Entered Type" in df_display.columns: cols_to_show.append("Entered Type")
+            if "Numerical" in df_display.columns: cols_to_show.append("Numerical")
+            cols_to_show.extend(["Debit", "Credit"])
+            
+            st.table(df_display[cols_to_show])
 
             # Footer with totals and delete button
             c1, c2, c3 = st.columns([2, 2, 1])
@@ -105,12 +113,13 @@ def _render_add_tab():
         "<div class='section-title'>Add New Entry</div>", unsafe_allow_html=True
     )
 
-    # 1. Entry Header Data
+   # 1. Entry Header Data
     with st.container():
         c1, c2, c3 = st.columns(3)
-        entry_date = c1.date_input("Date", value=date.today())
-        explanation = c2.text_input("Explanation", placeholder="e.g., Sales invoice...")
-        cost_centre = c3.text_input("Cost Centre", placeholder="e.g., Main Branch")
+        # Use next_journal in the keys to force a reset after saving
+        entry_date = c1.date_input("Date", value=date.today(), key=f"date_{st.session_state.next_journal}")
+        explanation = c2.text_input("Explanation", placeholder="e.g., Sales invoice...", key=f"exp_{st.session_state.next_journal}")
+        cost_centre = c3.text_input("Cost Centre", placeholder="e.g., Main Branch", key=f"cc_{st.session_state.next_journal}")
 
     st.markdown("---")
 
@@ -122,12 +131,12 @@ def _render_add_tab():
     lines_to_remove = []
 
     for i, line in enumerate(st.session_state.je_lines):
-        c1, c2, c3, c4 = st.columns([4, 2, 2, 0.5])
+        # Resized columns to fit the 2 new fields: [Account, Type, Num, Dr, Cr, Delete]
+        c_acc, c_type, c_num, c_dr, c_cr, c_del = st.columns([3, 1.5, 1.5, 2, 2, 0.5])
 
-        with c1:
-            # Finding current index for the selectbox
+        with c_acc:
             current_selection = None
-            if line["code"]:
+            if line.get("code"):
                 for label, code in options.items():
                     if code == line["code"]:
                         current_selection = label
@@ -142,35 +151,55 @@ def _render_add_tab():
                     else None
                 ),
                 placeholder="Choose account...",
-                key=f"acc_{i}",
+                key=f"acc_{i}_{st.session_state.next_journal}",  # CHANGED
             )
             st.session_state.je_lines[i]["code"] = options.get(account_label, "")
 
-        with c2:
+        with c_type:
+            st.session_state.je_lines[i]["account_type"] = st.text_input(
+                "Account Type", value=line.get("account_type", ""), key=f"type_{i}_{st.session_state.next_journal}" # CHANGED
+            )
+
+        with c_num:
+            num_str = st.text_input(
+                "Numerical", 
+                value=str(line.get("numerical", 0)), 
+                key=f"num_{i}_{st.session_state.next_journal}"
+            )
+            # Safely convert typed text to an integer (defaults to 0 if text is invalid)
+            try:
+                st.session_state.je_lines[i]["numerical"] = int(num_str)
+            except ValueError:
+                st.session_state.je_lines[i]["numerical"] = 0
+
+        with c_dr:
             dr = st.number_input(
                 "Debit",
                 min_value=0.0,
-                value=float(line["dr"]),
+                value=float(line.get("dr", 0.0)),
                 step=100.0,
-                key=f"dr_{i}",
+                key=f"dr_{i}_{st.session_state.next_journal}", # CHANGED
                 format="%.2f",
             )
             st.session_state.je_lines[i]["dr"] = dr
-        with c3:
+            
+        with c_cr:
             cr = st.number_input(
                 "Credit",
                 min_value=0.0,
-                value=float(line["cr"]),
+                value=float(line.get("cr", 0.0)),
                 step=100.0,
-                key=f"cr_{i}",
+                key=f"cr_{i}_{st.session_state.next_journal}", # CHANGED
                 format="%.2f",
             )
             st.session_state.je_lines[i]["cr"] = cr
-        with c4:
-            st.write("")
-            if st.button("🗑️", key=f"rm_{i}") and len(st.session_state.je_lines) > 2:
+            
+        with c_del:
+            # Replaces st.write("") with an exact 28px top margin to align with inputs
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            
+            if st.button("🗑️", key=f"rm_{i}_{st.session_state.next_journal}") and len(st.session_state.je_lines) > 2:
                 lines_to_remove.append(i)
-
     for idx in reversed(lines_to_remove):
         remove_je_line(idx)
         st.rerun()
@@ -189,15 +218,33 @@ def _render_add_tab():
     col_b.metric("Total Credit", format_currency(total_cr))
     col_c.metric("Difference", format_currency(diff))
 
-    if is_balanced:
-        st.success("✅ Balanced — Ready to save")
+    # --- NEW: Required Fields Validation ---
+    headers_valid = bool(explanation.strip()) and bool(cost_centre.strip())
+    
+    lines_valid = True
+    for line in st.session_state.je_lines:
+        # Check if the line is currently being used (has amounts or an account selected)
+        if line.get("code") or line.get("dr", 0) > 0 or line.get("cr", 0) > 0:
+            # If used, Account and Account Type cannot be empty
+            if not line.get("code") or not line.get("account_type", "").strip():
+                lines_valid = False
+                break
+
+    can_save = is_balanced and headers_valid and lines_valid
+
+    if can_save:
+        st.success("✅ Balanced and all required fields filled — Ready to save")
+    elif not headers_valid:
+        st.warning("⚠️ Missing Info: Please fill out both Explanation and Cost Centre.")
+    elif not lines_valid:
+        st.warning("⚠️ Missing Info: Active entry lines must have an Account and Account Type filled.")
     elif total_dr > 0 or total_cr > 0:
         st.error("❌ Unbalanced — Debits must equal Credits")
     else:
         st.info("ℹ️ At least two lines with valid data are required")
 
     # 3. Save Button
-    if st.button("Save Entry", disabled=not is_balanced):
+    if st.button("Save Entry", disabled=not can_save):
         new_entry = save_journal_entry(entry_date, explanation, cost_centre)
         if new_entry:
             st.success(f"Entry No. {new_entry['journal_no']} saved successfully.")

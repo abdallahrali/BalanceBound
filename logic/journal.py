@@ -47,14 +47,15 @@ def init_session_state():
 def reset_je_lines():
     """Reset the working journal entry lines to two blank rows."""
     st.session_state.je_lines = [
-        {"code": "", "dr": 0.0, "cr": 0.0},
-        {"code": "", "dr": 0.0, "cr": 0.0},
+        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
+        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
     ]
-
 
 def add_je_line():
     """Append a blank line to the working journal entry."""
-    st.session_state.je_lines.append({"code": "", "dr": 0.0, "cr": 0.0})
+    st.session_state.je_lines.append(
+        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0}
+    )
 
 
 def remove_je_line(index: int):
@@ -93,9 +94,11 @@ def save_journal_entry(
                 {
                     "code": line["code"],
                     "name": accounts.get(line["code"], line["code"]),
+                    "account_type": line.get("account_type", ""), 
+                    "numerical": int(line.get("numerical", 0)),   # Enforce integer here
                     "dr": line["dr"],
                     "cr": line["cr"],
-                    "type": get_account_type(line["code"]),
+                    "type": get_account_type(line["code"]), 
                 }
             )
     if not new_lines:
