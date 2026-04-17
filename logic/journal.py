@@ -5,6 +5,9 @@ Journal entry operations: creation, validation, state management.
 import json
 from datetime import date
 
+from config import OPENING_BALANCES_CSV, SAMPLE_ENTRIES_JSON
+from logic.accounts import get_account_type, get_accounts_dict
+
 import pandas as pd
 import streamlit as st
 
@@ -79,7 +82,7 @@ def save_journal_entry(
     cost_centre: str,
 ) -> dict | None:
     """
-    Save the current working lines as a new journal entry.
+    Save the current working lines as a new journal entry and write to JSON.
     Returns the saved entry dict, or None if nothing to save.
     """
     accounts = get_accounts_dict()
@@ -106,18 +109,34 @@ def save_journal_entry(
         "cost_centre": cost_centre,
         "lines": new_lines,
     }
+    
+    # 1. Update the session state (temporary memory)
     st.session_state.entries.append(new_entry)
     st.session_state.next_journal += 1
+    
+    # 2. Save the updated list back to the JSON file (permanent storage)
+    try:
+        with open(SAMPLE_ENTRIES_JSON, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.entries, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Failed to save to JSON: {e}")
+        
     reset_je_lines()
     return new_entry
 
-
 def delete_journal_entry(entry_id: int):
-    """Delete a journal entry by its ID."""
+    """Delete a journal entry by its ID and update the JSON file."""
+    # 1. Remove from session state
     st.session_state.entries = [
         e for e in st.session_state.entries if e["id"] != entry_id
     ]
-
+    
+    # 2. Update the JSON file
+    try:
+        with open(SAMPLE_ENTRIES_JSON, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.entries, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Failed to delete from JSON: {e}")
 
 def get_all_entries() -> list[dict]:
     """Return all journal entries."""

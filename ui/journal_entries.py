@@ -79,15 +79,26 @@ def _render_view_tab():
             c1.write(f"**Total:** {format_currency(total_dr)}")
 
             # Delete functionality
+            delete_state_key = f"delete_confirm_{entry['id']}"
+            
             if c3.button("🗑️ Delete Entry", key=f"del_{entry['id']}"):
-                st.warning(
-                    f"Are you sure you want to delete entry no. {entry['journal_no']}?"
-                )
-                if st.button("Yes, Delete", key=f"conf_del_{entry['id']}"):
+                # Set a flag in session state to remember we are confirming
+                st.session_state[delete_state_key] = True
+
+            # Check if we are in the confirmation state
+            if st.session_state.get(delete_state_key, False):
+                st.warning(f"Are you sure you want to delete entry no. {entry['journal_no']}?")
+                
+                col_yes, col_no = st.columns(2)
+                if col_yes.button("Yes, Delete", key=f"conf_del_{entry['id']}"):
                     delete_journal_entry(entry["id"])
+                    st.session_state[delete_state_key] = False # Reset state
                     st.success("Entry deleted successfully.")
                     st.rerun()
-
+                    
+                if col_no.button("Cancel", key=f"cancel_del_{entry['id']}"):
+                    st.session_state[delete_state_key] = False # Reset state
+                    st.rerun()
 
 def _render_add_tab():
     st.markdown(
