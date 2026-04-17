@@ -5,9 +5,6 @@ Journal entry operations: creation, validation, state management.
 import json
 from datetime import date
 
-from config import OPENING_BALANCES_CSV, SAMPLE_ENTRIES_JSON
-from logic.accounts import get_account_type, get_accounts_dict
-
 import pandas as pd
 import streamlit as st
 
@@ -50,6 +47,7 @@ def reset_je_lines():
         {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
         {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
     ]
+
 
 def add_je_line():
     """Append a blank line to the working journal entry."""
@@ -94,11 +92,11 @@ def save_journal_entry(
                 {
                     "code": line["code"],
                     "name": accounts.get(line["code"], line["code"]),
-                    "account_type": line.get("account_type", ""), 
-                    "numerical": int(line.get("numerical", 0)),   # Enforce integer here
+                    "account_type": line.get("account_type", ""),
+                    "numerical": int(line.get("numerical", 0)),  # Enforce integer here
                     "dr": line["dr"],
                     "cr": line["cr"],
-                    "type": get_account_type(line["code"]), 
+                    "type": get_account_type(line["code"]),
                 }
             )
     if not new_lines:
@@ -112,20 +110,21 @@ def save_journal_entry(
         "cost_centre": cost_centre,
         "lines": new_lines,
     }
-    
+
     # 1. Update the session state (temporary memory)
     st.session_state.entries.append(new_entry)
     st.session_state.next_journal += 1
-    
+
     # 2. Save the updated list back to the JSON file (permanent storage)
     try:
         with open(SAMPLE_ENTRIES_JSON, "w", encoding="utf-8") as f:
             json.dump(st.session_state.entries, f, ensure_ascii=False, indent=2)
     except Exception as e:
         st.error(f"Failed to save to JSON: {e}")
-        
+
     reset_je_lines()
     return new_entry
+
 
 def delete_journal_entry(entry_id: int):
     """Delete a journal entry by its ID and update the JSON file."""
@@ -133,7 +132,7 @@ def delete_journal_entry(entry_id: int):
     st.session_state.entries = [
         e for e in st.session_state.entries if e["id"] != entry_id
     ]
-    
+
     # 2. Update the JSON file
     try:
         with open(SAMPLE_ENTRIES_JSON, "w", encoding="utf-8") as f:
@@ -141,6 +140,27 @@ def delete_journal_entry(entry_id: int):
     except Exception as e:
         st.error(f"Failed to delete from JSON: {e}")
 
+
 def get_all_entries() -> list[dict]:
     """Return all journal entries."""
     return st.session_state.entries
+
+
+# Add this at the end of logic/journal.py
+
+
+def update_opening_balance(code: str, dr: float, cr: float):
+    """Update opening balance for an account and save to CSV."""
+    st.session_state.opening_balances[code] = {"dr": dr, "cr": cr}
+
+    # Format as a list of dictionaries for pandas
+    data = [
+        {"code": c, "dr": b["dr"], "cr": b["cr"]}
+        for c, b in st.session_state.opening_balances.items()
+    ]
+    df = pd.DataFrame(data)
+
+    try:
+        df.to_csv(OPENING_BALANCES_CSV, index=False)
+    except Exception as e:
+        st.error(f"Failed to save opening balances to CSV: {e}")

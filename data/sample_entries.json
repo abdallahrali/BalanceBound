@@ -688,5 +688,32 @@
         "type": "Asset"
       }
     ]
+  },
+  {
+    "id": 31,
+    "date": "2026-04-17",
+    "journal_no": 31,
+    "explanation": "New Devices",
+    "cost_centre": "Main Branch",
+    "lines": [
+      {
+        "code": "302001004",
+        "name": "مصروفات عمومية - أدوات مكتبية وتصوير",
+        "account_type": "Expense",
+        "numerical": 0,
+        "dr": 3000.0,
+        "cr": 0.0,
+        "type": "Expense"
+      },
+      {
+        "code": "101003001",
+        "name": "الأصول الثابتة - كمبيوتر وطابعات - Lap top",
+        "account_type": "Assets",
+        "numerical": 0,
+        "dr": 0.0,
+        "cr": 3000.0,
+        "type": "Asset"
+      }
+    ]
   }
 ]
