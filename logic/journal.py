@@ -40,21 +40,18 @@ def init_session_state():
     if "je_lines" not in st.session_state:
         reset_je_lines()
 
-
 def reset_je_lines():
     """Reset the working journal entry lines to two blank rows."""
     st.session_state.je_lines = [
-        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
-        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
     ]
-
 
 def add_je_line():
     """Append a blank line to the working journal entry."""
     st.session_state.je_lines.append(
-        {"code": "", "account_type": "", "numerical": 0, "dr": 0.0, "cr": 0.0}
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "dr": 0.0, "cr": 0.0}
     )
-
 
 def remove_je_line(index: int):
     """Remove a line by index (minimum 2 lines enforced)."""
@@ -75,15 +72,13 @@ def validate_je_lines() -> tuple[float, float, float, bool]:
     return total_dr, total_cr, diff, is_balanced
 
 
+# logic/journal.py
+
 def save_journal_entry(
     entry_date: date,
     explanation: str,
-    cost_centre: str,
+    # Remove cost_centre from here as it's now in the lines
 ) -> dict | None:
-    """
-    Save the current working lines as a new journal entry and write to JSON.
-    Returns the saved entry dict, or None if nothing to save.
-    """
     accounts = get_accounts_dict()
     new_lines = []
     for line in st.session_state.je_lines:
@@ -93,12 +88,14 @@ def save_journal_entry(
                     "code": line["code"],
                     "name": accounts.get(line["code"], line["code"]),
                     "account_type": line.get("account_type", ""),
-                    "numerical": int(line.get("numerical", 0)),  # Enforce integer here
+                    "cost_centre": line.get("cost_centre", ""), # Get from line
+                    "numerical": int(line.get("numerical", 0)),
                     "dr": line["dr"],
                     "cr": line["cr"],
                     "type": get_account_type(line["code"]),
                 }
             )
+    
     if not new_lines:
         return None
 
@@ -107,15 +104,13 @@ def save_journal_entry(
         "date": entry_date.strftime("%Y-%m-%d"),
         "journal_no": st.session_state.next_journal,
         "explanation": explanation,
-        "cost_centre": cost_centre,
+        # cost_centre is now inside 'lines'
         "lines": new_lines,
     }
 
-    # 1. Update the session state (temporary memory)
     st.session_state.entries.append(new_entry)
     st.session_state.next_journal += 1
 
-    # 2. Save the updated list back to the JSON file (permanent storage)
     try:
         with open(SAMPLE_ENTRIES_JSON, "w", encoding="utf-8") as f:
             json.dump(st.session_state.entries, f, ensure_ascii=False, indent=2)
@@ -124,7 +119,6 @@ def save_journal_entry(
 
     reset_je_lines()
     return new_entry
-
 
 def delete_journal_entry(entry_id: int):
     """Delete a journal entry by its ID and update the JSON file."""
