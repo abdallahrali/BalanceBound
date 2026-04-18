@@ -39,11 +39,10 @@ LEAF_CODE_LENGTH = 9
 
 # ─── Level labels ─────────────────────────────────────────────────────────────
 CODE_LEVEL_LABELS = {
-    1: "Main",
-    2: "Group",
-    3: "Category",
-    4: "Account",
-    9: "Sub-account",
+    1: "Type",  # e.g., "1"
+    3: "Category",  # e.g., "101"
+    6: "Account",  # e.g., "101001"
+    9: "Sub-account",  # e.g., "101001001"
 }
 
 # ─── Navigation pages ─────────────────────────────────────────────────────────
