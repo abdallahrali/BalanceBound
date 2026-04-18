@@ -22,8 +22,6 @@ def render():
     )
 
     # 1. --- Update Opening Balances ---
-    # We replaced the expander with a clear section header and a subtle side-border.
-    # This keeps the section always visible and ensures it blends with the website theme.
     st.markdown(
         """
         <div style='border-left: 5px solid #2563eb; padding-left: 20px; margin-top: 10px; margin-bottom: 20px;'>
@@ -40,10 +38,12 @@ def render():
         for code, name in leaf_accounts:
             account_category = get_account_type(code) or ""
             # Only add to the dropdown if it is NOT a revenue or expense
-            if "revenue" not in account_category.lower() and "expense" not in account_category.lower():
+            if (
+                "revenue" not in account_category.lower()
+                and "expense" not in account_category.lower()
+            ):
                 options[f"{code} - {name}"] = code
 
-        # Adjusted column variable names for clarity (Account, Category, Amount, Side, Button)
         c1, c_cat, c_amt, c_side, c_btn = st.columns([3, 2, 2, 2, 2])
 
         selected_label = c1.selectbox("Choose Account", list(options.keys()))
@@ -52,47 +52,36 @@ def render():
         account_category = get_account_type(selected_code)
         c_cat.text_input("Type", value=account_category, disabled=True)
 
-        # Get current balance to populate inputs
         current_ob = st.session_state.opening_balances.get(
             selected_code, {"dr": 0.0, "cr": 0.0}
         )
 
-        # --- EDITED PART START ---
-        # Determine the current amount and which side is active
         current_dr = float(current_ob.get("dr", 0.0))
         current_cr = float(current_ob.get("cr", 0.0))
-        
+
         if current_cr > 0:
             current_amount = current_cr
-            default_side_idx = 1  # 1 corresponds to "Credit"
+            default_side_idx = 1
         else:
             current_amount = current_dr
-            default_side_idx = 0  # 0 corresponds to "Debit"
+            default_side_idx = 0
 
-        # 1. Single Amount field
         amount_input = c_amt.number_input(
             "Amount", min_value=0.0, value=current_amount, step=100.0
         )
-        
-        # 2. Side dropdown
+
         side_input = c_side.selectbox(
             "Side", options=["Debit", "Credit"], index=default_side_idx
         )
-        # --- EDITED PART END ---
 
-        # Button alignment
         c_btn.write("")
         c_btn.write("")
         if c_btn.button("💾 Save Balance", use_container_width=True, type="primary"):
-            
-            # --- EDITED PART START ---
-            # Translate the Amount and Side back into dr and cr for the update function
             dr_val = amount_input if side_input == "Debit" else 0.0
             cr_val = amount_input if side_input == "Credit" else 0.0
-            
+
             update_opening_balance(selected_code, dr_val, cr_val)
-            # --- EDITED PART END ---
-            
+
             st.success("The opening balance has been successfully updated and saved.")
             st.rerun()
 
@@ -107,10 +96,8 @@ def render():
         return
 
     # --- Summary Performance Metrics ---
-    # We only sum Level 1 accounts to avoid double-counting the totals
     level_1_tb = tb[tb["Level"] == 1]
 
-    # Grand Totals (The sum of all final balances)
     total_tb_dr = level_1_tb["Total - Debit"].sum()
     total_tb_cr = level_1_tb["Total - Credit"].sum()
     total_tb_net = abs(total_tb_dr - total_tb_cr)
@@ -131,7 +118,7 @@ def render():
             side = "Debit"
         else:
             side = "Credit"
-            
+
         st.metric(f"Net Balance ({side})", format_currency(total_tb_net))
 
     if total_tb_net < 0.01:
@@ -168,15 +155,31 @@ def render():
     max_len = depth_mapping[selected_depth]
     filtered_tb = tb[tb["Code"].str.len() <= max_len].copy()
 
+    # --- NEW STYLING LOGIC START ---
+    # In the Trial Balance dataframe, "Level" is an integer representing code length (1, 3, 6, 9)
+    level_styles = {
+        1: "background-color: #0f3460; color: white; font-weight: bold;",
+        3: "background-color: #16427d; color: #e0e0e0;",
+        6: "background-color: #2e5a91; color: #d0d0d0;",
+        9: "background-color: #4a77a8; color: #ffffff;",
+    }
+
+    def apply_code_style(row):
+        style = level_styles.get(row["Level"], "")
+        # Apply style ONLY to the "Code" column
+        return [style if col == "Code" else "" for col in row.index]
+
+    styled_tb = filtered_tb.style.apply(apply_code_style, axis=1)
+    # --- NEW STYLING LOGIC END ---
+
     # 3. --- Interactive Table & Hierarchical Headers ---
     edited_tb = st.data_editor(
-        filtered_tb,
+        styled_tb,  # Pass the styled dataframe here instead of filtered_tb
         column_config={
             "Code": st.column_config.TextColumn("Code", disabled=True),
             "Account Name": st.column_config.TextColumn("Account Name", disabled=True),
             "Account Type": st.column_config.TextColumn("Type", disabled=True),
             "Level": None,  # Internal field
-            # Editable columns for opening balances
             "Opening Balance - Debit": st.column_config.NumberColumn(
                 "Opening Balance ➡️ Debit",
                 min_value=0.0,
@@ -189,7 +192,6 @@ def render():
                 format="%.2f",
                 help="Editable for detailed accounts",
             ),
-            # Automatic reporting columns
             "Movement - Debit": st.column_config.NumberColumn(
                 "Movement ➡️ Debit", disabled=True, format="%.2f"
             ),
@@ -220,11 +222,9 @@ def render():
             code = str(row["Code"])
 
             if len(code) == 9:
-                # Logic: If the user deletes a number or leaves it empty, default to 0.0
                 raw_dr = row["Opening Balance - Debit"]
                 raw_cr = row["Opening Balance - Credit"]
 
-                # Check for empty/missing values (NaN) and replace with 0.0
                 new_dr = float(raw_dr) if (pd.notnull(raw_dr) and raw_dr != "") else 0.0
                 new_cr = float(raw_cr) if (pd.notnull(raw_cr) and raw_cr != "") else 0.0
 
