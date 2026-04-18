@@ -189,11 +189,19 @@ def _render_add_tab():
                 key=f"acc_{i}_{st.session_state.next_journal}",
             )
             selected_code = options.get(account_label, "")
-            st.session_state.je_lines[i]["code"] = selected_code
-            st.session_state.je_lines[i]["_selected_code"] = selected_code
-
-        if st.session_state.je_lines[i].get("_selected_code"):
-            st.session_state.je_lines[i]["account_type"] = get_account_type_label(st.session_state.je_lines[i]["_selected_code"])
+            
+            # Check if the account actually changed during this rerun
+            if st.session_state.je_lines[i].get("code") != selected_code:
+                st.session_state.je_lines[i]["code"] = selected_code
+                st.session_state.je_lines[i]["_selected_code"] = selected_code
+                
+                # Fetch new account type
+                new_type = get_account_type_label(selected_code) if selected_code else ""
+                st.session_state.je_lines[i]["account_type"] = new_type
+                
+                # FORCE update the text_input's session_state key so it refreshes instantly
+                type_widget_key = f"type_{i}_{st.session_state.next_journal}"
+                st.session_state[type_widget_key] = new_type
 
         with c_type:
             st.text_input("Type", value=line.get("account_type", ""), key=f"type_{i}_{st.session_state.next_journal}", disabled=True)
