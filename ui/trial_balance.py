@@ -38,8 +38,8 @@ def render():
         leaf_accounts = get_leaf_accounts()
         options = {f"{code} - {name}": code for code, name in leaf_accounts}
 
-        # Layout for the account selection and balance input
-        c1, c_cat, c2, c3, c4 = st.columns([3, 2, 2, 2, 2])
+        # Adjusted column variable names for clarity (Account, Category, Amount, Side, Button)
+        c1, c_cat, c_amt, c_side, c_btn = st.columns([3, 2, 2, 2, 2])
 
         selected_label = c1.selectbox("Choose Account", list(options.keys()))
         selected_code = options[selected_label]
@@ -53,18 +53,42 @@ def render():
             selected_code, {"dr": 0.0, "cr": 0.0}
         )
 
-        dr_input = c2.number_input(
-            "Debit Amount", min_value=0.0, value=float(current_ob["dr"]), step=100.0
+        # --- EDITED PART START ---
+        # Determine the current amount and which side is active
+        current_dr = float(current_ob.get("dr", 0.0))
+        current_cr = float(current_ob.get("cr", 0.0))
+        
+        if current_cr > 0:
+            current_amount = current_cr
+            default_side_idx = 1  # 1 corresponds to "Credit"
+        else:
+            current_amount = current_dr
+            default_side_idx = 0  # 0 corresponds to "Debit"
+
+        # 1. Single Amount field
+        amount_input = c_amt.number_input(
+            "Amount", min_value=0.0, value=current_amount, step=100.0
         )
-        cr_input = c3.number_input(
-            "Credit Amount", min_value=0.0, value=float(current_ob["cr"]), step=100.0
+        
+        # 2. Side dropdown
+        side_input = c_side.selectbox(
+            "Side", options=["Debit", "Credit"], index=default_side_idx
         )
+        # --- EDITED PART END ---
 
         # Button alignment
-        c4.write("")
-        c4.write("")
-        if c4.button("💾 Save Balance", use_container_width=True, type="primary"):
-            update_opening_balance(selected_code, dr_input, cr_input)
+        c_btn.write("")
+        c_btn.write("")
+        if c_btn.button("💾 Save Balance", use_container_width=True, type="primary"):
+            
+            # --- EDITED PART START ---
+            # Translate the Amount and Side back into dr and cr for the update function
+            dr_val = amount_input if side_input == "Debit" else 0.0
+            cr_val = amount_input if side_input == "Credit" else 0.0
+            
+            update_opening_balance(selected_code, dr_val, cr_val)
+            # --- EDITED PART END ---
+            
             st.success("The opening balance has been successfully updated and saved.")
             st.rerun()
 
