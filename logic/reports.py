@@ -17,6 +17,19 @@ def format_currency(val: float) -> str:
     return f"{val:,.0f}"
 
 
+def _get_leaf_mask(df: pd.DataFrame) -> pd.Series:
+    """
+    Returns a boolean mask that is True only for leaf accounts
+    (accounts that have no children in the same DataFrame).
+    """
+    codes = df["Code"].tolist()
+    return df["Code"].apply(
+        lambda c: not any(
+            other != c and other.startswith(c) for other in codes
+        )
+    )
+
+
 def compute_trial_balance() -> pd.DataFrame:
     """
     Compute trial balance with hierarchical roll-up.
@@ -98,7 +111,7 @@ def compute_trial_balance() -> pd.DataFrame:
                 "Balance": abs(bal),
                 "Balance Type": "Debit" if bal >= 0 else "Credit",
                 "Account Type": get_account_type(code),
-                "Level": len(code),  # Added level to prevent double-counting in UI
+                "Level": len(code),
             }
         )
     return pd.DataFrame(rows)
@@ -107,25 +120,13 @@ def compute_trial_balance() -> pd.DataFrame:
 def get_income_statement_data(tb: pd.DataFrame) -> dict:
     """
     Extract income statement figures from a trial balance DataFrame.
-    Returns dict with revenue_df, expense_df, total_rev, total_exp, net_income.
-    Uses only leaf accounts (highest level/longest code) to avoid double counting.
+    Uses only leaf accounts to avoid double counting.
     """
     rev_df = tb[tb["Account Type"] == "Revenue"].copy()
     exp_df = tb[tb["Account Type"] == "Expense"].copy()
 
-    rev_codes = rev_df["Code"].tolist()
-    rev_leaf_mask = rev_df["Code"].apply(
-        lambda c: not any(
-            other != c and other.startswith(c) for other in rev_codes
-        )
-    )
-
-    exp_codes = exp_df["Code"].tolist()
-    exp_leaf_mask = exp_df["Code"].apply(
-        lambda c: not any(
-            other != c and other.startswith(c) for other in exp_codes
-        )
-    )
+    rev_leaf_mask = _get_leaf_mask(rev_df)
+    exp_leaf_mask = _get_leaf_mask(exp_df)
 
     total_rev = rev_df.loc[rev_leaf_mask, "Balance"].sum()
     total_exp = exp_df.loc[exp_leaf_mask, "Balance"].sum()
@@ -143,17 +144,33 @@ def get_income_statement_data(tb: pd.DataFrame) -> dict:
 def get_balance_sheet_data(tb: pd.DataFrame) -> dict:
     """
     Extract balance sheet figures from a trial balance DataFrame.
-    Returns dict with assets_df, liab_df, net_income, total_assets, total_liab.
+    Uses only leaf accounts to avoid double counting.
     """
     assets_df = tb[tb["Account Type"] == "Asset"].copy()
     liab_df = tb[tb["Account Type"] == "Liability/Equity"].copy()
     rev_df = tb[tb["Account Type"] == "Revenue"]
     exp_df = tb[tb["Account Type"] == "Expense"]
 
-    net_income = rev_df["Balance"].sum() - exp_df["Balance"].sum()
-    total_assets = (assets_df["Total - Debit"] - assets_df["Total - Credit"]).sum()
+    # Net income from leaf accounts only
+    rev_leaf_mask = _get_leaf_mask(rev_df)
+    exp_leaf_mask = _get_leaf_mask(exp_df)
+    net_income = (
+        rev_df.loc[rev_leaf_mask, "Balance"].sum()
+        - exp_df.loc[exp_leaf_mask, "Balance"].sum()
+    )
+
+    # Assets & Liabilities from leaf accounts only
+    assets_leaf_mask = _get_leaf_mask(assets_df)
+    liab_leaf_mask = _get_leaf_mask(liab_df)
+
+    total_assets = (
+        assets_df.loc[assets_leaf_mask, "Total - Debit"]
+        - assets_df.loc[assets_leaf_mask, "Total - Credit"]
+    ).sum()
+
     total_liab = (
-        liab_df["Total - Credit"] - liab_df["Total - Debit"]
+        liab_df.loc[liab_leaf_mask, "Total - Credit"]
+        - liab_df.loc[liab_leaf_mask, "Total - Debit"]
     ).sum() + net_income
 
     return {
@@ -168,13 +185,17 @@ def get_balance_sheet_data(tb: pd.DataFrame) -> dict:
 def get_asset_breakdown(assets_df: pd.DataFrame) -> tuple[list[str], list[float]]:
     """
     Break down assets into categories for charting.
-    Returns (labels, values).
+    Uses only leaf accounts to avoid double counting.
     """
-    codes = assets_df["Code"].astype(str)
+    leaf_mask = _get_leaf_mask(assets_df)
+    leaf_assets = assets_df[leaf_mask].copy()
+
+    codes = leaf_assets["Code"].astype(str)
 
     def _net(mask):
         return (
-            assets_df.loc[mask, "Total - Debit"] - assets_df.loc[mask, "Total - Credit"]
+            leaf_assets.loc[mask, "Total - Debit"]
+            - leaf_assets.loc[mask, "Total - Credit"]
         ).sum()
 
     labels = [
