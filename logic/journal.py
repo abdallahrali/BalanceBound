@@ -47,10 +47,17 @@ def reset_je_lines():
         {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "dr": 0.0, "cr": 0.0},
     ]
 
+def reset_je_lines():
+    """Reset the working journal entry lines to two blank rows."""
+    st.session_state.je_lines = [
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "amount": 0.0, "side": "Debit"},
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "amount": 0.0, "side": "Debit"},
+    ]
+
 def add_je_line():
     """Append a blank line to the working journal entry."""
     st.session_state.je_lines.append(
-        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "dr": 0.0, "cr": 0.0}
+        {"code": "", "account_type": "", "cost_centre": "", "numerical": 0, "amount": 0.0, "side": "Debit"}
     )
 
 def remove_je_line(index: int):
@@ -58,43 +65,43 @@ def remove_je_line(index: int):
     if len(st.session_state.je_lines) > 2:
         st.session_state.je_lines.pop(index)
 
-
 def validate_je_lines() -> tuple[float, float, float, bool]:
     """
     Validate current working lines.
     Returns (total_dr, total_cr, difference, is_balanced).
     """
-    total_dr = sum(l["dr"] for l in st.session_state.je_lines)
-    total_cr = sum(l["cr"] for l in st.session_state.je_lines)
+    total_dr = 0.0
+    total_cr = 0.0
+    for line in st.session_state.je_lines:
+        amt = line.get("amount", 0.0)
+        if line.get("side") == "Debit":
+            total_dr += amt
+        else:
+            total_cr += amt
+    
     diff = abs(total_dr - total_cr)
-    # Balanced if difference is negligible and there is at least one debit
-    is_balanced = diff < 0.01 and total_dr > 0
+    is_balanced = diff < 0.01 and (total_dr > 0)
     return total_dr, total_cr, diff, is_balanced
 
-
-# logic/journal.py
-
-def save_journal_entry(
-    entry_date: date,
-    explanation: str,
-    # Remove cost_centre from here as it's now in the lines
-) -> dict | None:
+def save_journal_entry(entry_date: date, explanation: str) -> dict | None:
     accounts = get_accounts_dict()
     new_lines = []
+    
     for line in st.session_state.je_lines:
-        if line["code"] and (line["dr"] > 0 or line["cr"] > 0):
-            new_lines.append(
-                {
-                    "code": line["code"],
-                    "name": accounts.get(line["code"], line["code"]),
-                    "account_type": line.get("account_type", ""),
-                    "cost_centre": line.get("cost_centre", ""), # Get from line
-                    "numerical": int(line.get("numerical", 0)),
-                    "dr": line["dr"],
-                    "cr": line["cr"],
-                    "type": get_account_type(line["code"]),
-                }
-            )
+        amt = line.get("amount", 0.0)
+        if line["code"] and amt > 0:
+            # Map the single 'amount' and 'side' back to 'dr'/'cr' for the database
+            is_dr = line["side"] == "Debit"
+            new_lines.append({
+                "code": line["code"],
+                "name": accounts.get(line["code"], line["code"]),
+                "account_type": line.get("account_type", ""),
+                "cost_centre": line.get("cost_centre", ""),
+                "numerical": int(line.get("numerical", 0)),
+                "dr": amt if is_dr else 0.0,
+                "cr": 0.0 if is_dr else amt,
+                "type": get_account_type(line["code"]),
+            })
     
     if not new_lines:
         return None

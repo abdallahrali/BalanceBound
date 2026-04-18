@@ -169,8 +169,9 @@ def _render_add_tab():
     lines_to_remove = []
 
     for i, line in enumerate(st.session_state.je_lines):
-        # Resized columns to fit: [Account, Type, Cost Centre, Num, Dr, Cr, Delete]
-        c_acc, c_type, c_cc, c_num, c_dr, c_cr, c_del = st.columns([2.5, 1.2, 1.5, 1.2, 1.8, 1.8, 0.5])
+        # Column layout: [Account, Type, Cost Centre, Numerical, Amount, Side, Delete]
+        cols = st.columns([2.2, 1.1, 1.3, 1.0, 1.8, 1.2, 0.5])
+        c_acc, c_type, c_cc, c_num, c_amt, c_side, c_del = cols
 
         with c_acc:
             current_selection = None
@@ -198,7 +199,6 @@ def _render_add_tab():
             st.text_input("Type", value=line.get("account_type", ""), key=f"type_{i}_{st.session_state.next_journal}", disabled=True)
 
         with c_cc:
-            # NEW: Cost Centre field for each account
             st.session_state.je_lines[i]["cost_centre"] = st.text_input(
                 "Cost Centre", 
                 value=line.get("cost_centre", ""), 
@@ -213,12 +213,25 @@ def _render_add_tab():
             except ValueError:
                 st.session_state.je_lines[i]["numerical"] = 0
 
-        with c_dr:
-            st.session_state.je_lines[i]["dr"] = st.number_input("Debit", min_value=0.0, value=float(line.get("dr", 0.0)), step=100.0, key=f"dr_{i}_{st.session_state.next_journal}", format="%.2f")
-            
-        with c_cr:
-            st.session_state.je_lines[i]["cr"] = st.number_input("Credit", min_value=0.0, value=float(line.get("cr", 0.0)), step=100.0, key=f"cr_{i}_{st.session_state.next_journal}", format="%.2f")
-            
+        with c_amt:
+            # Single Amount field
+            st.session_state.je_lines[i]["amount"] = st.number_input(
+                "Amount",
+                min_value=0.0,
+                value=float(line.get("amount", 0.0)),
+                format="%.2f",
+                key=f"amt_{i}_{st.session_state.next_journal}"
+            )
+
+        with c_side:
+            # Side selector (Debit or Credit)
+            st.session_state.je_lines[i]["side"] = st.selectbox(
+                "Side",
+                options=["Debit", "Credit"],
+                index=0 if line.get("side") == "Debit" else 1,
+                key=f"side_{i}_{st.session_state.next_journal}"
+            )
+
         with c_del:
             st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️", key=f"rm_{i}_{st.session_state.next_journal}") and len(st.session_state.je_lines) > 2:
