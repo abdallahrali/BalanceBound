@@ -106,46 +106,29 @@ def render():
     # We only sum Level 1 accounts to avoid double-counting the totals
     level_1_tb = tb[tb["Level"] == 1]
 
-    # Totals for Opening Balances
-    total_ob_dr = level_1_tb["Opening Balance - Debit"].sum()
-    total_ob_cr = level_1_tb["Opening Balance - Credit"].sum()
-    total_ob_net = abs(total_ob_dr - total_ob_cr)
-
-    # Totals for Movements
-    total_mv_dr = level_1_tb["Movement - Debit"].sum()
-    total_mv_cr = level_1_tb["Movement - Credit"].sum()
-    total_mv_net = max(total_mv_dr, total_mv_cr)
-
-    # Grand Totals
+    # Grand Totals (The sum of all final balances)
     total_tb_dr = level_1_tb["Total - Debit"].sum()
     total_tb_cr = level_1_tb["Total - Credit"].sum()
     total_tb_net = abs(total_tb_dr - total_tb_cr)
 
     # 2. --- Redesigned KPI Section ---
-    # We use a column layout to show the Total and its Debit/Credit components underneath
     m1, m2, m3 = st.columns(3)
 
     with m1:
-        st.metric("Starting Balances (Net)", format_currency(total_ob_net))
-        st.caption(
-            f"**Debit:** {format_currency(total_ob_dr)} | **Credit:** {format_currency(total_ob_cr)}"
-        )
+        st.metric("Total Debit", format_currency(total_tb_dr))
 
     with m2:
-        st.metric("Total Activity (Net)", format_currency(total_mv_net))
-        st.caption(
-            f"**Debit:** {format_currency(total_mv_dr)} | **Credit:** {format_currency(total_mv_cr)}"
-        )
+        st.metric("Total Credit", format_currency(total_tb_cr))
 
     with m3:
-        st.metric(
-            "Net Balance "
-            + ("(Debit)" if (total_tb_dr >= total_tb_cr) else "(Credit)"),
-            format_currency(total_tb_net),
-        )
-        st.caption(
-            f"**Debit:** {format_currency(total_tb_dr)} | **Credit:** {format_currency(total_tb_cr)}"
-        )
+        if total_tb_net < 0.01:
+            side = "Balanced"
+        elif total_tb_dr > total_tb_cr:
+            side = "Debit"
+        else:
+            side = "Credit"
+            
+        st.metric(f"Net Balance ({side})", format_currency(total_tb_net))
 
     if total_tb_net < 0.01:
         st.success("✅ The system is perfectly balanced.")
@@ -153,6 +136,7 @@ def render():
         st.error(
             f"❌ The system is currently out of balance by {format_currency(total_tb_net)}."
         )
+
     st.markdown("---")
 
     # 2. --- Collapse/Expand Feature ---
