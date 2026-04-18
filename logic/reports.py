@@ -108,12 +108,29 @@ def get_income_statement_data(tb: pd.DataFrame) -> dict:
     """
     Extract income statement figures from a trial balance DataFrame.
     Returns dict with revenue_df, expense_df, total_rev, total_exp, net_income.
+    Uses only leaf accounts (highest level/longest code) to avoid double counting.
     """
     rev_df = tb[tb["Account Type"] == "Revenue"].copy()
     exp_df = tb[tb["Account Type"] == "Expense"].copy()
-    total_rev = rev_df["Balance"].sum()
-    total_exp = exp_df["Balance"].sum()
+
+    rev_codes = rev_df["Code"].tolist()
+    rev_leaf_mask = rev_df["Code"].apply(
+        lambda c: not any(
+            other != c and other.startswith(c) for other in rev_codes
+        )
+    )
+
+    exp_codes = exp_df["Code"].tolist()
+    exp_leaf_mask = exp_df["Code"].apply(
+        lambda c: not any(
+            other != c and other.startswith(c) for other in exp_codes
+        )
+    )
+
+    total_rev = rev_df.loc[rev_leaf_mask, "Balance"].sum()
+    total_exp = exp_df.loc[exp_leaf_mask, "Balance"].sum()
     net_income = total_rev - total_exp
+
     return {
         "rev_df": rev_df,
         "exp_df": exp_df,
