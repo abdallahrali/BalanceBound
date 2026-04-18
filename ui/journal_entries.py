@@ -7,7 +7,7 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from logic.accounts import get_accounts_dict, get_leaf_accounts
+from logic.accounts import get_accounts_dict, get_leaf_accounts, get_account_type_label
 from logic.journal import (
     add_je_line,
     delete_journal_entry,
@@ -44,6 +44,28 @@ def _render_view_tab():
     if not entries:
         st.info("No entries recorded yet.")
         return
+
+    # Build summary table from all entries
+    all_lines = []
+    for entry in entries:
+        for line in entry["lines"]:
+            all_lines.append({
+                "Journal No.": entry["journal_no"],
+                "Date": entry["date"],
+                "Explanation": entry.get("explanation", ""),
+                "Cost Centre": entry.get("cost_centre", ""),
+                "Code": line.get("code", ""),
+                "Account": line.get("name", ""),
+                "Account Type": line.get("account_type", ""),
+                "Debit": line.get("dr", 0),
+                "Credit": line.get("cr", 0),
+            })
+    
+    if all_lines:
+        df_all = pd.DataFrame(all_lines)
+        st.markdown("### 📊 All Journal Entries")
+        st.dataframe(df_all, use_container_width=True, hide_index=True)
+        st.markdown("---")
 
     for entry in reversed(entries):
         total_dr = sum(l["dr"] for l in entry["lines"])
@@ -151,13 +173,23 @@ def _render_add_tab():
                     else None
                 ),
                 placeholder="Choose account...",
-                key=f"acc_{i}_{st.session_state.next_journal}",  # CHANGED
+                key=f"acc_{i}_{st.session_state.next_journal}",
             )
-            st.session_state.je_lines[i]["code"] = options.get(account_label, "")
+            selected_code = options.get(account_label, "")
+            st.session_state.je_lines[i]["code"] = selected_code
+            
+            # Store selected code in session state for use after selectbox
+            st.session_state.je_lines[i]["_selected_code"] = selected_code
+
+        # Auto-populate account type when account is selected
+        stored_code = st.session_state.je_lines[i].get("_selected_code", "")
+        if stored_code:
+            st.session_state.je_lines[i]["account_type"] = get_account_type_label(stored_code)
 
         with c_type:
-            st.session_state.je_lines[i]["account_type"] = st.text_input(
-                "Account Type", value=line.get("account_type", ""), key=f"type_{i}_{st.session_state.next_journal}" # CHANGED
+            current_type = st.session_state.je_lines[i].get("account_type", "")
+            st.text_input(
+                "Account Type", value=current_type, key=f"type_{i}_{st.session_state.next_journal}", disabled=True
             )
 
         with c_num:
@@ -223,10 +255,8 @@ def _render_add_tab():
     
     lines_valid = True
     for line in st.session_state.je_lines:
-        # Check if the line is currently being used (has amounts or an account selected)
         if line.get("code") or line.get("dr", 0) > 0 or line.get("cr", 0) > 0:
-            # If used, Account and Account Type cannot be empty
-            if not line.get("code") or not line.get("account_type", "").strip():
+            if not line.get("code"):
                 lines_valid = False
                 break
 
@@ -237,7 +267,7 @@ def _render_add_tab():
     elif not headers_valid:
         st.warning("⚠️ Missing Info: Please fill out both Explanation and Cost Centre.")
     elif not lines_valid:
-        st.warning("⚠️ Missing Info: Active entry lines must have an Account and Account Type filled.")
+        st.warning("⚠️ Missing Info: Active entry lines must have an Account filled.")
     elif total_dr > 0 or total_cr > 0:
         st.error("❌ Unbalanced — Debits must equal Credits")
     else:
