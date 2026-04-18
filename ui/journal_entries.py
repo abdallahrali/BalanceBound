@@ -47,16 +47,34 @@ def _render_view_tab():
 
     # Build summary table from all entries
     all_lines = []
-    for entry in entries:
+    for i, entry in enumerate(entries):
+        # Add an empty "spacer" row between different journal entries
+        if i > 0:
+            all_lines.append({
+                "Journal No.": "", "Date": "", "Explanation": "", 
+                "Cost Centre": "", "Code": "", "Account": "", 
+                "Account Type": "", "Debit": None, "Credit": None
+            })
+            
         for line in entry["lines"]:
+            # Automatically determine the Account Type based on the first digit of the code
+            code_str = str(line.get("code", ""))
+            first_digit = code_str[0] if code_str else ""
+            
+            # Map the prefix to the readable label (defaulting to "Other")
+            # Based on config.ACCOUNT_TYPE_MAP and config.ACCOUNT_TYPE_LABELS
+            from config import ACCOUNT_TYPE_MAP, ACCOUNT_TYPE_LABELS
+            raw_type = ACCOUNT_TYPE_MAP.get(first_digit, "Other")
+            display_type = ACCOUNT_TYPE_LABELS.get(raw_type, "Other")
+
             all_lines.append({
                 "Journal No.": entry["journal_no"],
                 "Date": entry["date"],
                 "Explanation": entry.get("explanation", ""),
                 "Cost Centre": entry.get("cost_centre", ""),
-                "Code": line.get("code", ""),
+                "Code": code_str,
                 "Account": line.get("name", ""),
-                "Account Type": line.get("account_type", ""),
+                "Account Type": display_type, # Automatically assigned here
                 "Debit": line.get("dr", 0),
                 "Credit": line.get("cr", 0),
             })
