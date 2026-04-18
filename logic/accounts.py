@@ -60,3 +60,28 @@ def build_accounts_display_df() -> pd.DataFrame:
     df["Type"] = df["Code"].apply(get_account_type_label)
     df["Level"] = df["Code"].apply(get_code_level_label)
     return df
+
+
+
+
+def save_accounts_to_csv(df: pd.DataFrame):
+    """
+    Saves the updated DataFrame back to the accounts.csv file.
+    It handles renaming columns back to the CSV format.
+    """
+    # Create a copy to avoid modifying the UI dataframe
+    save_df = df.copy()
+    
+    # Rename columns back to original CSV format (code, name)
+    # only if they were renamed for display
+    if "Code" in save_df.columns:
+        save_df.rename(columns={"Code": "code"}, inplace=True)
+    if "Account Name" in save_df.columns:
+        save_df.rename(columns={"Account Name": "name"}, inplace=True)
+        
+    # We only want to save 'code' and 'name' columns to the CSV
+    # (Type and Level are calculated dynamically, so we don't save them)
+    save_df = save_df[["code", "name"]]
+    
+    # Save to CSV
+    save_df.to_csv(ACCOUNTS_CSV, index=False)
