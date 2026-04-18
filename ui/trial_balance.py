@@ -36,17 +36,21 @@ def render():
 
     with st.container():
         leaf_accounts = get_leaf_accounts()
-        options = {f"{code} - {name}": code for code, name in leaf_accounts}
+        options = {}
+        for code, name in leaf_accounts:
+            account_category = get_account_type(code) or ""
+            # Only add to the dropdown if it is NOT a revenue or expense
+            if "revenue" not in account_category.lower() and "expense" not in account_category.lower():
+                options[f"{code} - {name}"] = code
 
         # Adjusted column variable names for clarity (Account, Category, Amount, Side, Button)
         c1, c_cat, c_amt, c_side, c_btn = st.columns([3, 2, 2, 2, 2])
 
         selected_label = c1.selectbox("Choose Account", list(options.keys()))
-        selected_code = options[selected_label]
+        selected_code = options.get(selected_label)
 
-        # Using non-technical terms like "Category" instead of "Account Type"
         account_category = get_account_type(selected_code)
-        c_cat.text_input("Category", value=account_category, disabled=True)
+        c_cat.text_input("Type", value=account_category, disabled=True)
 
         # Get current balance to populate inputs
         current_ob = st.session_state.opening_balances.get(
