@@ -32,9 +32,12 @@ def render():
     expenses = is_data["total_exp"]
     net_income = is_data["net_income"]
 
-    # Use the English column names established in logic/reports.py
+    # Calculate total assets using the root account (code '1') to avoid double-counting
+    asset_root = tb[tb["Code"] == "1"]
+    total_assets = (asset_root["Total - Debit"] - asset_root["Total - Credit"]).sum()
+    
+    # Filter assets for the breakdown chart (all levels)
     assets = tb[tb["Account Type"] == "Asset"]
-    total_assets = (assets["Total - Debit"] - assets["Total - Credit"]).sum()
     total_journals = len(get_all_entries())
 
     # ── KPI Cards ──

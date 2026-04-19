@@ -3,3 +3,4 @@ test/
 __pycache__/
 .venv*
 */__pycache__/
+GEMINI.md
