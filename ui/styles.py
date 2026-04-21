@@ -208,11 +208,37 @@ def inject_css():
     /* ═══════════════════════════════════════════════════════════
        KPI CARDS
     ═══════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       KPI CARDS
+    ═══════════════════════════════════════════════════════════ */
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4, 1fr); /* Default 4 columns for desktop */
         gap: 14px;
         margin-bottom: 26px;
+    }
+
+    /* --- MOBILE RESPONSIVENESS --- */
+    @media (max-width: 768px) {
+        .kpi-grid {
+            /* Switch to 2 columns on mobile (2 above 2) */
+            grid-template-columns: repeat(2, 1fr) !important; 
+            gap: 10px !important;
+        }
+
+        .kpi-card {
+            padding: 15px 12px !important;
+        }
+
+        /* Scale down font sizes so they don't overflow on small screens */
+        .kpi-card .kpi-value {
+            font-size: 1.4rem !important; 
+        }
+        
+        .kpi-card .kpi-label {
+            font-size: 9px !important;
+            letter-spacing: 0.5px !important;
+        }
     }
     .kpi-card {
         background: var(--bg-card);

@@ -157,22 +157,21 @@ def render():
         <div class="kpi-grid" style="margin-top: 15px; margin-bottom: 2rem;">
           <div class="kpi-card gold" style="padding: 15px;">
             <div class="kpi-label">Assets</div>
-            <div class="kpi-value" style="font-size: 1.8rem;">{c_assets}</div>
-            <div class="kpi-accent"></div>
+            <div class="kpi-value">{c_assets}</div> <div class="kpi-accent"></div>
           </div>
           <div class="kpi-card blue" style="padding: 15px;">
             <div class="kpi-label">Liab & Equity</div>
-            <div class="kpi-value" style="font-size: 1.8rem;">{c_liab}</div>
+            <div class="kpi-value">{c_liab}</div>
             <div class="kpi-accent"></div>
           </div>
           <div class="kpi-card green" style="padding: 15px;">
             <div class="kpi-label">Revenues</div>
-            <div class="kpi-value" style="font-size: 1.8rem;">{c_rev}</div>
+            <div class="kpi-value">{c_rev}</div>
             <div class="kpi-accent"></div>
           </div>
           <div class="kpi-card red" style="padding: 15px;">
             <div class="kpi-label">Expenses</div>
-            <div class="kpi-value" style="font-size: 1.8rem;">{c_exp}</div>
+            <div class="kpi-value">{c_exp}</div>
             <div class="kpi-accent"></div>
           </div>
         </div>
