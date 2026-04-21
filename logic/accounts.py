@@ -166,11 +166,18 @@ def generate_next_code(parent_code: str, target_level: str) -> str:
     return f"{prefix}{new_num}"
 
 
-def delete_account_cascade(code: str):
+def delete_account_cascade(target_code: str) -> tuple[bool, str]:
     """Deletes an account and all its children recursively."""
+    # --- NEW SAFETY CHECK ---
+    if len(str(target_code)) == 1:
+        return (
+            False,
+            "Main Account Types (1-digit codes) are foundational to the system and cannot be deleted.",
+        )
+    # ------------------------
     df = load_accounts_df()
     # Keep only rows that do NOT start with the deleted code
-    new_df = df[~df["code"].astype(str).str.startswith(str(code))].copy()
+    new_df = df[~df["code"].astype(str).str.startswith(str(target_code))].copy()
 
     # Save using logic-consistent columns (code, name)
     new_df.to_csv(ACCOUNTS_CSV, index=False)

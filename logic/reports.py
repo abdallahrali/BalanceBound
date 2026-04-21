@@ -24,9 +24,7 @@ def _get_leaf_mask(df: pd.DataFrame) -> pd.Series:
     """
     codes = df["Code"].tolist()
     return df["Code"].apply(
-        lambda c: not any(
-            other != c and other.startswith(c) for other in codes
-        )
+        lambda c: not any(other != c and other.startswith(c) for other in codes)
     )
 
 
@@ -117,6 +115,55 @@ def compute_trial_balance() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def count_accounts() -> pd.DataFrame:
+    """
+    Compute trial balance with hierarchical roll-up.
+    Returns a DataFrame with all balance columns.
+    """
+    accounts = get_accounts_dict()
+    balances: dict[str, dict] = {}
+
+    # Initialize ALL accounts in the dictionary
+    for code in accounts.keys():
+        balances[code] = {"ob_dr": 0, "ob_cr": 0, "mv_dr": 0, "mv_cr": 0}
+
+    # 3. Hierarchical Roll-up (Bottom-up)
+    # Sort codes by length descending so children (len 9) roll up to parents (len 6, 3, 1)
+    sorted_codes = sorted(list(balances.keys()), key=len, reverse=True)
+    for code in sorted_codes:
+        parent_code = None
+        # Determine parent based on specific code lengths in accounts.csv
+        if len(code) == 9:
+            parent_code = code[:6]
+        elif len(code) == 6:
+            parent_code = code[:3]
+        elif len(code) == 3:
+            parent_code = code[:1]
+
+    rows = []
+    # Sort ascending for Top-Down display in the UI
+    for code in sorted(list(balances.keys())):
+
+        # Add visual indentation based on account level
+        indent = ""
+        if len(code) == 3:
+            indent = "   "
+        elif len(code) == 6:
+            indent = "      "
+        elif len(code) == 9:
+            indent = "         "
+
+        rows.append(
+            {
+                "Code": code,
+                "Account Name": indent + accounts.get(code, code),
+                "Account Type": get_account_type(code),
+                "Level": len(code),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def get_income_statement_data(tb: pd.DataFrame) -> dict:
     """
     Extract income statement figures from a trial balance DataFrame.
@@ -184,32 +231,70 @@ def get_balance_sheet_data(tb: pd.DataFrame) -> dict:
 
 def get_asset_breakdown(assets_df: pd.DataFrame) -> tuple[list[str], list[float]]:
     """
-    Break down assets into categories for charting.
-    Uses only leaf accounts to avoid double counting.
+    Break down assets into their dynamic categories for charting.
+    Uses leaf accounts to calculate values, grouped by their 3-digit category parent.
     """
+    # 1. Create a mapping of 3-digit Category Codes to their actual Account Names
+    # e.g., {"101": "Fixed Assets", "102": "Banks & Cash"}
+    category_rows = assets_df[assets_df["Code"].str.len() == 3]
+    category_map = dict(zip(category_rows["Code"], category_rows["Account Name"]))
+
+    # 2. Get only the leaf accounts to calculate actual balances without double counting
     leaf_mask = _get_leaf_mask(assets_df)
     leaf_assets = assets_df[leaf_mask].copy()
 
-    codes = leaf_assets["Code"].astype(str)
+    # 3. Calculate net balance (Debit - Credit for Assets)
+    leaf_assets["Net_Balance"] = (
+        leaf_assets["Total - Debit"] - leaf_assets["Total - Credit"]
+    )
 
-    def _net(mask):
-        return (
-            leaf_assets.loc[mask, "Total - Debit"]
-            - leaf_assets.loc[mask, "Total - Credit"]
-        ).sum()
+    # 4. Find the 3-digit parent category code for every leaf account
+    leaf_assets["Category_Code"] = leaf_assets["Code"].astype(str).str[:3]
 
-    labels = [
-        "Fixed Assets",
-        "Banks & Cash",
-        "Inventory",
-        "Accounts Receivable",
-        "Other",
-    ]
-    values = [
-        _net(codes.str.startswith("101")),
-        _net(codes.str.startswith("102")),
-        _net(codes.str.startswith("105")),
-        _net(codes.str.startswith("103")),
-        _net(~codes.str.startswith(("101", "102", "103", "105"))),
-    ]
+    # 5. Group the net balances by these category codes
+    grouped_assets = leaf_assets.groupby("Category_Code")["Net_Balance"].sum()
+
+    labels = []
+    values = []
+
+    # 6. Build the final lists, converting codes to their proper names
+    for cat_code, total in grouped_assets.items():
+        if total > 0:  # Only include categories that actually have a positive balance
+            # Get the real name from our map, fallback to just the code if not found
+            cat_name = category_map.get(cat_code, f"Category {cat_code}")
+            labels.append(cat_name)
+            values.append(total)
+
+    return labels, values
+
+
+def get_liab_breakdown(liab_df: pd.DataFrame) -> tuple[list[str], list[float]]:
+    """
+    Break down liabilities and equity into their dynamic categories for charting.
+    Uses leaf accounts to calculate values, grouped by their 3-digit category parent.
+    """
+    # Map 3-digit Category Codes to their Account Names
+    category_rows = liab_df[liab_df["Code"].str.len() == 3]
+    category_map = dict(zip(category_rows["Code"], category_rows["Account Name"]))
+
+    # Get only the leaf accounts to avoid double counting
+    leaf_mask = _get_leaf_mask(liab_df)
+    leaf_liab = liab_df[leaf_mask].copy()
+
+    # Net balance for liabilities/equity is Total Credit - Total Debit
+    leaf_liab["Net_Balance"] = leaf_liab["Total - Credit"] - leaf_liab["Total - Debit"]
+    leaf_liab["Category_Code"] = leaf_liab["Code"].astype(str).str[:3]
+
+    # Group by category code
+    grouped_liab = leaf_liab.groupby("Category_Code")["Net_Balance"].sum()
+
+    labels = []
+    values = []
+
+    for cat_code, total in grouped_liab.items():
+        if total > 0:  # Only chart categories with a positive balance
+            cat_name = category_map.get(cat_code, f"Category {cat_code}")
+            labels.append(cat_name)
+            values.append(total)
+
     return labels, values

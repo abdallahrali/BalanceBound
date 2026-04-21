@@ -1,5 +1,5 @@
 """
-Accounting System — Main Streamlit Entry Point
+BalanceBound — Financial Intelligence Platform
 """
 
 import streamlit as st
@@ -29,32 +29,26 @@ page = render_sidebar()
 # ─── Page Router ──────────────────────────────────────────────────────────────
 if page == "dashboard":
     from ui.dashboard import render
-
     render()
 
 elif page == "chart_of_accounts":
     from ui.chart_of_accounts import render
-
     render()
 
 elif page == "journal_entries":
     from ui.journal_entries import render
-
     render()
 
 elif page == "trial_balance":
     from ui.trial_balance import render
-
     render()
 
 elif page == "income_statement":
     from ui.income_statement import render
-
     render()
 
 elif page == "balance_sheet":
     from ui.balance_sheet import render
-
     render()
 
 else:
