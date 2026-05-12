@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Bounds - Accounting Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:          #0D0F14;
+            --bg-card:     #13161E;
+            --bg-el:       #1A1D27;
+            --border:      rgba(255,255,255,0.07);
+            --gold:        #D4AF37;
+            --gold-lt:     #F0D060;
+            --text:        #F0F0F5;
+            --text-2:      #8A8FA8;
+            --text-3:      #555B70;
+            --r:           16px;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--gold), transparent 80%);
+        }
+
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.5rem;
+            color: var(--gold);
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: var(--text-2);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .affiliation {
+            color: var(--text);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--gold), #8B6914);
+            color: #0D0F14;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: transform 0.2s, opacity 0.2s;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .github-link {
+            display: block;
+            color: var(--text-2);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+            transition: color 0.2s;
+        }
+
+        .github-link:hover {
+            color: var(--gold);
+        }
+
+        .team-section {
+            text-align: right;
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+        }
+
+        .team-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            color: var(--text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .team-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .team-member {
+            background: var(--bg-el);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text);
+        }
+
+        .member-id {
+            color: var(--gold);
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 25px; }
+            h1 { font-size: 2rem; }
+            .team-member { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Balance Bounds</h1>
+        <div class="subtitle">(Accounting Project)</div>
+        <div class="affiliation">حاسبات وذكاء اصطناعي جامعة العاصمة (حلوان سابقا)</div>
+
+        <a href="https://balancebound.streamlit.app/" class="btn" target="_blank">زيارة الموقع الإلكتروني</a>
+        
+        <a href="https://github.com/abdallahrali/BalanceBounds" class="github-link" target="_blank">
+            <svg style="vertical-align: middle; margin-left: 5px;" height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+            GitHub Repository
+        </a>
+
+        <div class="team-section">
+            <div class="team-title">أعضاء الفريق (فرقة ثانية)</div>
+            <div class="team-list">
+                <div class="team-member">
+                    <span>عبدالله رمضان عبدالله علي</span>
+                    <span class="member-id">20240575</span>
+                </div>
+                <div class="team-member">
+                    <span>احمد خيري عبدالفتاح اسماعيل</span>
+                    <span class="member-id">20240035</span>
+                </div>
+                <div class="team-member">
+                    <span>احمد عبدالهادي احمد رضا جاد</span>
+                    <span class="member-id">20240056</span>
+                </div>
+                <div class="team-member">
+                    <span>احمد محمد محمد عبده الشرقاوي</span>
+                    <span class="member-id">20240081</span>
+                </div>
+                <div class="team-member">
+                    <span>حمزه طه بركات طه</span>
+                    <span class="member-id">20240312</span>
+                </div>
+                <div class="team-member">
+                    <span>عمر احمد محمد عبدالرحمن صديق</span>
+                    <span class="member-id">20240623</span>
+                </div>
+                <div class="team-member">
+                    <span>كريم مصطفي عبدالحي محمد</span>
+                    <span class="member-id">20240719</span>
+                </div>
+                <div class="team-member">
+                    <span>مالك احمد محمد مصطفى عبيدو</span>
+                    <span class="member-id">20240773</span>
+                </div>
+                <div class="team-member">
+                    <span>محمد رجب سعد عطية</span>
+                    <span class="member-id">20240823</span>
+                </div>
+                <div class="team-member">
+                    <span>محمود ابراهيم محمد عبدالحافظ</span>
+                    <span class="member-id">20240890</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
